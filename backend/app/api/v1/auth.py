@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dependencies.auth import get_current_user
+from app.dependencies.auth import get_current_active_user, get_current_superuser
 from app.dependencies.db import get_db
 from app.models.user import User
 from app.schemas.auth import (
@@ -51,7 +51,18 @@ async def login(
     status_code=status.HTTP_200_OK,
 )
 async def get_me(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
 ) -> UserResponse:
-    """Get current authenticated user profile."""
+    """Get current active authenticated user profile."""
     return current_user
+
+
+@router.get(
+    "/admin",
+    status_code=status.HTTP_200_OK,
+)
+async def get_admin(
+    current_user: User = Depends(get_current_superuser),
+) -> dict[str, str]:
+    """Protected admin endpoint requiring superuser privileges."""
+    return {"message": "Admin access granted"}
