@@ -36,3 +36,11 @@ class TrendResponse(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class TrendListResponse(BaseModel):
+    items: list[TrendResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
