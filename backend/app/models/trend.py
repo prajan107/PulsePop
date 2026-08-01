@@ -1,9 +1,14 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, Float, String, Text, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import DateTime, Float, ForeignKey, String, Text, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
+
+if TYPE_CHECKING:
+    from app.models.category import Category
+    from app.models.source import Source
 
 
 class Trend(Base):
@@ -14,6 +19,21 @@ class Trend(Base):
         String(255), index=True, nullable=False
     )
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    category_id: Mapped[int | None] = mapped_column(
+        ForeignKey("categories.id"), nullable=True
+    )
+    source_id: Mapped[int | None] = mapped_column(
+        ForeignKey("sources.id"), nullable=True
+    )
+
+    category: Mapped["Category | None"] = relationship(
+        "Category", back_populates="trends"
+    )
+    source: Mapped["Source | None"] = relationship(
+        "Source", back_populates="trends"
+    )
+
     sentiment_score: Mapped[float] = mapped_column(
         Float, default=0.0, nullable=False
     )

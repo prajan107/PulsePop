@@ -1,9 +1,13 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, String, Text, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
+
+if TYPE_CHECKING:
+    from app.models.trend import Trend
 
 
 class Category(Base):
@@ -14,6 +18,11 @@ class Category(Base):
         String(255), unique=True, index=True, nullable=False
     )
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    trends: Mapped[list["Trend"]] = relationship(
+        "Trend", back_populates="category"
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
