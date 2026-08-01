@@ -23,6 +23,11 @@ class Settings(BaseSettings):
     REDDIT_CLIENT_SECRET: str = ""
     REDDIT_USER_AGENT: str = "PulsePop/1.0.0"
 
+    NEWS_API_KEY: str = ""
+
+    REDDIT_INGESTION_INTERVAL_MINUTES: int = 15
+    NEWS_INGESTION_INTERVAL_MINUTES: int = 30
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

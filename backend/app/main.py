@@ -1,5 +1,5 @@
-from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
@@ -16,12 +16,16 @@ from app.core.exceptions import (
 )
 from app.core.logging import setup_logging
 from app.middleware.logging_middleware import LoggingMiddleware
+from app.scheduler.scheduler import IngestionScheduler
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     setup_logging()
+    scheduler = IngestionScheduler()
+    scheduler.start()
     yield
+    scheduler.shutdown()
 
 
 app = FastAPI(

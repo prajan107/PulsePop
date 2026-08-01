@@ -11,3 +11,5 @@ loguru
 pwdlib[argon2]
 python-jose[cryptography]
 asyncpraw
+apscheduler
+newsapi-python
