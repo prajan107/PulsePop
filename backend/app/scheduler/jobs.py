@@ -1,45 +1,27 @@
-from loguru import logger
-
+from app.collectors.google_trends_collector import GoogleTrendsCollector
 from app.collectors.news_collector import NewsCollector
 from app.collectors.reddit_collector import RedditCollector
-from app.core.database import AsyncSessionLocal
-from app.services.ingestion_service import IngestionService
+from app.collectors.youtube_collector import YouTubeCollector
+from app.core.config import settings
+from app.scheduler.scheduler import IngestionScheduler
 
 
-async def collect_reddit_job() -> None:
-    """Scheduled job to collect trending posts from Reddit and persist via IngestionService."""
-    logger.info("Executing scheduled job: collect_reddit_job")
-    collector = RedditCollector()
-    try:
-        raw_items = await collector.collect()
-        if not raw_items:
-            logger.info("Reddit collector returned 0 items (mock or empty credentials)")
-            return
-
-        async with AsyncSessionLocal() as session:
-            service = IngestionService(session)
-            res = await service.ingest_raw_data(raw_items)
-            logger.info("Reddit ingestion job completed: {}", res)
-    except Exception as e:
-        logger.error("Error executing collect_reddit_job: {}", e)
-
-
-async def collect_news_job() -> None:
-    """Scheduled job to collect top headlines from NewsAPI and persist via IngestionService."""
-    logger.info("Executing scheduled job: collect_news_job")
-    collector = NewsCollector()
-    try:
-        raw_items = await collector.collect()
-        if not raw_items:
-            logger.info("News collector returned 0 items (mock or empty credentials)")
-            return
-
-        async with AsyncSessionLocal() as session:
-            service = IngestionService(session)
-            res = await service.ingest_raw_data(raw_items)
-            logger.info("News ingestion job completed: {}", res)
-    except Exception as e:
-        logger.error("Error executing collect_news_job: {}", e)
+def create_default_scheduler() -> IngestionScheduler:
+    """Instantiate and configure IngestionScheduler with all default data source collectors."""
+    scheduler = IngestionScheduler()
+    scheduler.register_collector(
+        RedditCollector(), settings.REDDIT_INGESTION_INTERVAL_MINUTES
+    )
+    scheduler.register_collector(
+        NewsCollector(), settings.NEWS_INGESTION_INTERVAL_MINUTES
+    )
+    scheduler.register_collector(
+        YouTubeCollector(), settings.YOUTUBE_INGESTION_INTERVAL_MINUTES
+    )
+    scheduler.register_collector(
+        GoogleTrendsCollector(), settings.GOOGLE_TRENDS_INGESTION_INTERVAL_MINUTES
+    )
+    return scheduler
 
 
-__all__ = ["collect_reddit_job", "collect_news_job"]
+__all__ = ["create_default_scheduler"]

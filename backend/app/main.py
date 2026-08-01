@@ -16,13 +16,13 @@ from app.core.exceptions import (
 )
 from app.core.logging import setup_logging
 from app.middleware.logging_middleware import LoggingMiddleware
-from app.scheduler.scheduler import IngestionScheduler
+from app.scheduler import create_default_scheduler
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     setup_logging()
-    scheduler = IngestionScheduler()
+    scheduler = create_default_scheduler()
     scheduler.start()
     yield
     scheduler.shutdown()

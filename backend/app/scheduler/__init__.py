@@ -1,4 +1,8 @@
-from app.scheduler.jobs import collect_news_job, collect_reddit_job
-from app.scheduler.scheduler import IngestionScheduler
+from app.scheduler.jobs import create_default_scheduler
+from app.scheduler.scheduler import CollectorRegistration, IngestionScheduler
 
-__all__ = ["IngestionScheduler", "collect_reddit_job", "collect_news_job"]
+__all__ = [
+    "IngestionScheduler",
+    "CollectorRegistration",
+    "create_default_scheduler",
+]

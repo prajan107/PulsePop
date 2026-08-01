@@ -13,3 +13,5 @@ python-jose[cryptography]
 asyncpraw
 apscheduler
 newsapi-python
+google-api-python-client
+pytrends
