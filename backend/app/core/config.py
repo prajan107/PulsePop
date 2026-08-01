@@ -7,6 +7,11 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     HOST: str = "127.0.0.1"
     PORT: int = 8000
+    DATABASE_HOST: str = "localhost"
+    DATABASE_PORT: int = 5432
+    DATABASE_NAME: str = "pulsepop"
+    DATABASE_USER: str = "postgres"
+    DATABASE_PASSWORD: str = "postgres"
 
     model_config = SettingsConfigDict(
         env_file=".env",
