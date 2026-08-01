@@ -2,8 +2,10 @@ fastapi
 uvicorn[standard]
 pydantic
 pydantic-settings
+email-validator
 sqlalchemy
 asyncpg
 psycopg2-binary
 alembic
 loguru
+pwdlib[argon2]
