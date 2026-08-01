@@ -22,4 +22,14 @@ class LoginRequest(BaseModel):
 
 
 class LoginResponse(BaseModel):
-    message: str
+    access_token: str
+    token_type: str = "bearer"
+
+
+class UserResponse(BaseModel):
+    id: int
+    username: str
+    email: str
+    is_active: bool
+
+    model_config = {"from_attributes": True}

@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.security import hash_password, verify_password
+from app.core.security import create_access_token, hash_password, verify_password
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
 from app.schemas.auth import LoginRequest, RegisterRequest
@@ -34,8 +34,8 @@ class AuthService:
             hashed_password=hashed_pwd,
         )
 
-    async def authenticate_user(self, request: LoginRequest) -> User:
-        """Authenticate user by verifying email and password."""
+    async def authenticate_user(self, request: LoginRequest) -> dict[str, str]:
+        """Authenticate user by email and password and return JWT access token."""
         user = await self.user_repo.get_by_email(request.email)
         if not user:
             raise HTTPException(
@@ -49,4 +49,7 @@ class AuthService:
                 detail="Invalid email or password",
             )
 
-        return user
+        access_token = create_access_token(
+            data={"sub": str(user.id), "email": user.email}
+        )
+        return {"access_token": access_token, "token_type": "bearer"}

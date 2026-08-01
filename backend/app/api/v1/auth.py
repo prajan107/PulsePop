@@ -1,8 +1,16 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.dependencies.auth import get_current_user
 from app.dependencies.db import get_db
-from app.schemas.auth import LoginRequest, LoginResponse, RegisterRequest, RegisterResponse
+from app.models.user import User
+from app.schemas.auth import (
+    LoginRequest,
+    LoginResponse,
+    RegisterRequest,
+    RegisterResponse,
+    UserResponse,
+)
 from app.services.auth_service import AuthService
 
 router = APIRouter()
@@ -32,7 +40,18 @@ async def login(
     request: LoginRequest,
     db: AsyncSession = Depends(get_db),
 ) -> LoginResponse:
-    """Authenticate user with email and password (login validation only)."""
+    """Authenticate user with email and password and return JWT access token."""
     auth_service = AuthService(db)
-    await auth_service.authenticate_user(request)
-    return LoginResponse(message="Login successful")
+    return await auth_service.authenticate_user(request)
+
+
+@router.get(
+    "/me",
+    response_model=UserResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def get_me(
+    current_user: User = Depends(get_current_user),
+) -> UserResponse:
+    """Get current authenticated user profile."""
+    return current_user
