@@ -3,16 +3,24 @@ import google.generativeai as genai
 
 from app.ai.base import BaseAIProvider
 from app.ai.exceptions import AIProviderError, AIResponseError
-from app.ai.models import AIResponse
+from app.ai.models import AIResponse, EmbeddingResult
 from app.core.config import settings
 
 
 class GeminiProvider(BaseAIProvider):
     """Gemini AI provider implementation."""
 
-    def __init__(self, api_key: str | None = None, model_name: str | None = None):
+    def __init__(
+        self,
+        api_key: str | None = None,
+        model_name: str | None = None,
+        embedding_model_name: str | None = None,
+    ):
         self.api_key = settings.GEMINI_API_KEY if api_key is None else api_key
         self.model_name = model_name or settings.GEMINI_MODEL
+        self.embedding_model_name = embedding_model_name or getattr(
+            settings, "GEMINI_EMBEDDING_MODEL", "models/text-embedding-004"
+        )
         if self.api_key:
             genai.configure(api_key=self.api_key)
 
@@ -58,6 +66,35 @@ class GeminiProvider(BaseAIProvider):
             raise
         except Exception as e:
             raise AIProviderError(f"Gemini API error: {str(e)}") from e
+
+    def generate_embedding(self, text: str) -> EmbeddingResult:
+        if not self.api_key:
+            raise AIProviderError("Gemini API key is not configured.")
+
+        text = text[: settings.AI_MAX_INPUT_CHARS]
+        if not text or not text.strip():
+            raise AIProviderError("Input text for embedding cannot be empty.")
+
+        try:
+            response = genai.embed_content(
+                model=self.embedding_model_name,
+                content=text,
+            )
+            vector = response.get("embedding") if isinstance(response, dict) else getattr(response, "embedding", None)
+
+            if not vector or len(vector) == 0:
+                raise AIResponseError("Gemini embedding API returned an empty vector.")
+
+            return EmbeddingResult(
+                vector=vector,
+                provider=self.provider_name,
+                model=self.embedding_model_name,
+                dimensions=len(vector),
+            )
+        except AIProviderError:
+            raise
+        except Exception as e:
+            raise AIProviderError(f"Gemini embedding API error: {str(e)}") from e
 
     def health_check(self) -> bool:
         if not self.api_key:

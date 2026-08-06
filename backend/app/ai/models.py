@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from enum import Enum
 from pydantic import BaseModel, Field
 
@@ -21,3 +22,19 @@ class SentimentResult(BaseModel):
     label: SentimentLabel
     confidence: float
     reason: str
+
+
+class SummaryResult(BaseModel):
+    summary: str
+    key_points: list[str]
+    confidence: float
+    provider: str | None = None
+    model: str | None = None
+
+
+class EmbeddingResult(BaseModel):
+    vector: list[float]
+    provider: str
+    model: str
+    dimensions: int
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

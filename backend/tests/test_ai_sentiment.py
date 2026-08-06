@@ -19,6 +19,9 @@ class MockProvider(BaseAIProvider):
             latency_ms=12.5,
         )
 
+    def generate_embedding(self, text: str):
+        raise NotImplementedError()
+
     def health_check(self) -> bool:
         return True
 

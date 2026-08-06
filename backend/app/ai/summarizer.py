@@ -3,25 +3,25 @@ import re
 from pydantic import ValidationError
 
 from app.ai.base import BaseAIProvider
-from app.ai.exceptions import AIParsingError
+from app.ai.exceptions import AIParsingError, AIResponseError
 from app.ai.factory import AIProviderFactory
-from app.ai.models import SentimentResult
-from app.ai.prompts import SENTIMENT_PROMPT_V1
+from app.ai.models import SummaryResult
+from app.ai.prompts import SUMMARY_PROMPT_V1
 from app.core.config import settings
 
 
-class SentimentAnalyzer:
-    """Service for performing sentiment analysis using configured AI providers."""
+class Summarizer:
+    """Service for generating summaries using configured AI providers."""
 
     def __init__(self, provider: BaseAIProvider | None = None):
         self.provider = provider or AIProviderFactory.get_provider()
 
-    def analyze(self, text: str) -> SentimentResult:
+    def summarize(self, text: str) -> SummaryResult:
         if not text or not text.strip():
-            raise AIParsingError("Input text for sentiment analysis cannot be empty.")
+            raise AIParsingError("Input text for summarization cannot be empty.")
 
         text = text[: settings.AI_MAX_INPUT_CHARS]
-        prompt = SENTIMENT_PROMPT_V1.format(text=text)
+        prompt = SUMMARY_PROMPT_V1.format(text=text)
         ai_response = self.provider.generate_text(prompt)
 
         raw_text = ai_response.text.strip()
@@ -37,9 +37,17 @@ class SentimentAnalyzer:
             try:
                 data = json.loads(cleaned_text)
             except json.JSONDecodeError as e:
-                raise AIParsingError(f"Failed to parse LLM response as JSON: {raw_text}") from e
+                raise AIParsingError(f"Failed to parse LLM summary response as JSON: {raw_text}") from e
 
         try:
-            return SentimentResult.model_validate(data)
+            summary_result = SummaryResult.model_validate(data)
         except ValidationError as e:
-            raise AIParsingError(f"LLM response failed SentimentResult validation: {e}") from e
+            raise AIParsingError(f"LLM response failed SummaryResult validation: {e}") from e
+
+        if len(summary_result.summary.strip()) < 10:
+            raise AIResponseError("Summary is too short or invalid.")
+
+        summary_result.provider = ai_response.provider
+        summary_result.model = ai_response.model
+
+        return summary_result

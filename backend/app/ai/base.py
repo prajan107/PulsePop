@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from app.ai.models import AIResponse
+from app.ai.models import AIResponse, EmbeddingResult
 
 
 class BaseAIProvider(ABC):
@@ -8,6 +8,11 @@ class BaseAIProvider(ABC):
     @abstractmethod
     def generate_text(self, prompt: str) -> AIResponse:
         """Generate text from a prompt using the AI provider."""
+        pass
+
+    @abstractmethod
+    def generate_embedding(self, text: str) -> EmbeddingResult:
+        """Generate vector embedding for input text using the AI provider."""
         pass
 
     @abstractmethod
