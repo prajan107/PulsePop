@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     YOUTUBE_INGESTION_INTERVAL_MINUTES: int = 60
     GOOGLE_TRENDS_INGESTION_INTERVAL_MINUTES: int = 120
 
+    GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-2.5-flash"
+    AI_PROVIDER: str = "gemini"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

@@ -15,3 +15,4 @@ apscheduler
 newsapi-python
 google-api-python-client
 pytrends
+google-generativeai
