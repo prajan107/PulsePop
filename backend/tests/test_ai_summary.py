@@ -62,7 +62,7 @@ def test_summarizer_short_summary_raises_response_error():
 
 def test_summarizer_invalid_json_raises_parsing_error():
     summarizer = Summarizer(provider=MockSummaryProvider("Non-JSON model output"))
-    with pytest.raises(AIParsingError, match="Failed to parse LLM summary response as JSON"):
+    with pytest.raises(AIParsingError, match="Failed to parse LLM response as JSON"):
         summarizer.summarize("Sample input text")
 
 

@@ -1,5 +1,3 @@
-import json
-import re
 from pydantic import ValidationError
 
 from app.ai.base import BaseAIProvider
@@ -7,7 +5,7 @@ from app.ai.exceptions import AIParsingError, AIResponseError
 from app.ai.factory import AIProviderFactory
 from app.ai.models import SummaryResult
 from app.ai.prompts import SUMMARY_PROMPT_V1
-from app.core.config import settings
+from app.ai.utils import parse_json_response, truncate_input
 
 
 class Summarizer:
@@ -20,24 +18,11 @@ class Summarizer:
         if not text or not text.strip():
             raise AIParsingError("Input text for summarization cannot be empty.")
 
-        text = text[: settings.AI_MAX_INPUT_CHARS]
+        text = truncate_input(text)
         prompt = SUMMARY_PROMPT_V1.format(text=text)
         ai_response = self.provider.generate_text(prompt)
 
-        raw_text = ai_response.text.strip()
-        data = None
-
-        # Primary attempt: direct JSON parsing
-        try:
-            data = json.loads(raw_text)
-        except json.JSONDecodeError:
-            # Fallback attempt: strip markdown code blocks if present
-            cleaned_text = re.sub(r"^```(?:json)?\s*", "", raw_text, flags=re.IGNORECASE).strip()
-            cleaned_text = re.sub(r"\s*```$", "", cleaned_text, flags=re.IGNORECASE).strip()
-            try:
-                data = json.loads(cleaned_text)
-            except json.JSONDecodeError as e:
-                raise AIParsingError(f"Failed to parse LLM summary response as JSON: {raw_text}") from e
+        data = parse_json_response(ai_response.text)
 
         try:
             summary_result = SummaryResult.model_validate(data)
