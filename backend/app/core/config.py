@@ -32,13 +32,20 @@ class Settings(BaseSettings):
     GOOGLE_TRENDS_INGESTION_INTERVAL_MINUTES: int = 120
 
     GEMINI_API_KEY: str = ""
-    GEMINI_MODEL: str = "gemini-2.5-flash"
+    GEMINI_MODEL: str = "gemini-1.5-flash"
     GEMINI_EMBEDDING_MODEL: str = "models/text-embedding-004"
     AI_PROVIDER: str = "gemini"
     AI_MAX_INPUT_CHARS: int = 12000
     AI_DUPLICATE_THRESHOLD: float = 0.85
     AI_ENTITY_MIN_CONFIDENCE: float = 0.25
     AI_PIPELINE_TIMEOUT_SECONDS: int = 60
+
+    TREND_CORRELATION_THRESHOLD: float = 0.80
+    TREND_SCORE_POPULARITY_WEIGHT: float = 0.30
+    TREND_SCORE_FRESHNESS_WEIGHT: float = 0.20
+    TREND_SCORE_SOURCE_DIVERSITY_WEIGHT: float = 0.20
+    TREND_SCORE_SENTIMENT_WEIGHT: float = 0.15
+    TREND_SCORE_AI_CONFIDENCE_WEIGHT: float = 0.15
 
     model_config = SettingsConfigDict(
         env_file=".env",

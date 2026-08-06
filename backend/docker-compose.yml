@@ -1,45 +1,49 @@
 services:
   postgres:
     image: postgres:16-alpine
+    container_name: pulsepop-postgres
     restart: unless-stopped
-
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_DB: ${DATABASE_NAME:-pulsepop}
       POSTGRES_USER: ${DATABASE_USER:-postgres}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-postgres}
-
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-postgres} -d ${DATABASE_NAME:-pulsepop}"]
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - pulsepop-network
 
   backend:
     build:
       context: .
       dockerfile: Dockerfile
-
+    container_name: pulsepop-backend
     restart: unless-stopped
-
     env_file:
       - .env
-
     environment:
       DATABASE_HOST: postgres
       DATABASE_PORT: 5432
       DATABASE_NAME: ${DATABASE_NAME:-pulsepop}
       DATABASE_USER: ${DATABASE_USER:-postgres}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres}
-
     ports:
       - "8000:8000"
-
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - pulsepop-network
 
 volumes:
   postgres_data:
+
+networks:
+  pulsepop-network:
+    driver: bridge

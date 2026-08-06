@@ -2,22 +2,21 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Search as SearchIcon, 
-  Filter, 
   Sparkles, 
   Grid, 
   List as ListIcon, 
-  ArrowUpRight, 
   Clock, 
-  Tag, 
   SlidersHorizontal,
   X 
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { MOCK_TRENDS, MOCK_TRENDING_KEYWORDS } from '@/mocks/mockData';
-import { formatNumber } from '@/utils/cn';
+import { Card } from '@/components/ui/card';
+import { useTrends } from '@/features/trends/trendQueries';
+import { TrendCard } from '@/components/trends/TrendCard';
+import { TrendTable } from '@/components/trends/TrendTable';
+import { TrendSkeleton } from '@/components/trends/TrendSkeleton';
+import { MOCK_TRENDING_KEYWORDS } from '@/mocks/mockData';
 
 export const SearchPage: React.FC = () => {
   const navigate = useNavigate();
@@ -28,24 +27,42 @@ export const SearchPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const categories = ['All', 'AI & ML', 'SaaS', 'Developer Tools', 'Crypto', 'E-Commerce'];
+  const categoryIdMap: Record<string, number | undefined> = {
+    'AI & ML': 1,
+    'SaaS': 2,
+    'Developer Tools': 3,
+    'Crypto': 4,
+    'E-Commerce': 5,
+  };
+
+  const sources = ['All', 'Twitter', 'Reddit', 'GitHub', 'ProductHunt', 'News'];
+  const sourceIdMap: Record<string, number | undefined> = {
+    'Twitter': 1,
+    'Reddit': 2,
+    'GitHub': 3,
+    'ProductHunt': 4,
+    'News': 5,
+  };
+
   const sentiments = ['All', 'High (>80)', 'Moderate (50-80)', 'Low (<50)'];
-  const sources = ['All', 'Twitter', 'GitHub', 'Reddit', 'ProductHunt', 'News'];
 
-  const filteredTrends = MOCK_TRENDS.filter((item) => {
-    const matchesQuery = 
-      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.topKeywords.some(k => k.toLowerCase().includes(searchQuery.toLowerCase()));
+  // Query live API backend trends via React Query
+  const { data, isLoading, isError, refetch } = useTrends({
+    search: searchQuery.trim() || undefined,
+    category_id: categoryIdMap[selectedCategory],
+    source_id: sourceIdMap[selectedSource],
+    page: 1,
+    page_size: 50,
+  });
 
-    const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
-    const matchesSource = selectedSource === 'All' || item.sources.includes(selectedSource as any);
-    
-    let matchesSentiment = true;
-    if (selectedSentiment === 'High (>80)') matchesSentiment = item.sentimentScore >= 80;
-    if (selectedSentiment === 'Moderate (50-80)') matchesSentiment = item.sentimentScore >= 50 && item.sentimentScore < 80;
-    if (selectedSentiment === 'Low (<50)') matchesSentiment = item.sentimentScore < 50;
+  const apiTrends = data?.items || [];
 
-    return matchesQuery && matchesCategory && matchesSource && matchesSentiment;
+  // Filter client-side for sentiment score tier if selected
+  const filteredTrends = apiTrends.filter((item) => {
+    if (selectedSentiment === 'High (>80)') return item.trend_score >= 80;
+    if (selectedSentiment === 'Moderate (50-80)') return item.trend_score >= 50 && item.trend_score < 80;
+    if (selectedSentiment === 'Low (<50)') return item.trend_score < 50;
+    return true;
   });
 
   const clearFilters = () => {
@@ -63,7 +80,7 @@ export const SearchPage: React.FC = () => {
           Trend Discovery & Search Engine <Sparkles className="h-6 w-6 text-[#6366F1]" />
         </h1>
         <p className="mt-1 text-sm text-[#94A3B8]">
-          Filter and query thousands of AI signals, tech stack shifts, and market opportunities.
+          Filter and query real-time AI signals, tech stack shifts, and market opportunities from live backend API.
         </p>
       </div>
 
@@ -87,7 +104,7 @@ export const SearchPage: React.FC = () => {
         )}
       </div>
 
-      {/* Recent & Trending Searches */}
+      {/* Popular Keyword Shortcuts */}
       <div className="flex items-center space-x-2 overflow-x-auto pb-1">
         <span className="text-xs font-semibold text-[#64748B] flex items-center gap-1 uppercase tracking-wider shrink-0">
           <Clock className="h-3.5 w-3.5" /> Popular:
@@ -138,9 +155,8 @@ export const SearchPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Filter Dropdown Selectors */}
+        {/* Filter Selectors */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {/* Category Filter */}
           <div>
             <label className="text-xs text-[#94A3B8] mb-1 block">Category</label>
             <select
@@ -152,9 +168,8 @@ export const SearchPage: React.FC = () => {
             </select>
           </div>
 
-          {/* Sentiment Filter */}
           <div>
-            <label className="text-xs text-[#94A3B8] mb-1 block">Sentiment Score</label>
+            <label className="text-xs text-[#94A3B8] mb-1 block">Trend Velocity Score</label>
             <select
               value={selectedSentiment}
               onChange={(e) => setSelectedSentiment(e.target.value)}
@@ -164,7 +179,6 @@ export const SearchPage: React.FC = () => {
             </select>
           </div>
 
-          {/* Source Platform Filter */}
           <div>
             <label className="text-xs text-[#94A3B8] mb-1 block">Source Platform</label>
             <select
@@ -178,98 +192,37 @@ export const SearchPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Results Count Header */}
+      {/* Results Header */}
       <div className="flex items-center justify-between text-sm text-[#94A3B8]">
-        <span>Showing <strong className="text-white">{filteredTrends.length}</strong> matching trends</span>
+        <span>Showing <strong className="text-white">{filteredTrends.length}</strong> matching trends from backend</span>
       </div>
 
-      {/* Results Grid / List */}
-      {filteredTrends.length > 0 ? (
+      {/* Results Display */}
+      {isLoading ? (
+        <TrendSkeleton />
+      ) : isError ? (
+        <Card className="border-[#EF4444]/30 bg-[#EF4444]/10 p-6 text-center text-xs text-[#EF4444]">
+          Failed to retrieve trends from backend API.
+          <div className="mt-3">
+            <Button size="sm" variant="outline" onClick={() => refetch()}>
+              Retry Search
+            </Button>
+          </div>
+        </Card>
+      ) : filteredTrends.length > 0 ? (
         viewMode === 'grid' ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filteredTrends.map((trend) => (
-              <Card
-                key={trend.id}
-                onClick={() => navigate(`/trends/${trend.id}`)}
-                className="group flex flex-col justify-between border-[#1F2937] bg-[#111827] p-5 cursor-pointer transition-all duration-300 hover:border-[#6366F1] hover:shadow-xl hover:shadow-[#6366F1]/10"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-start justify-between">
-                    <Badge variant="secondary" className="bg-[#1E293B] text-[#818CF8]">
-                      {trend.category}
-                    </Badge>
-                    <div className="flex items-center space-x-1 text-xs font-bold text-[#34D399]">
-                      <ArrowUpRight className="h-4 w-4" />
-                      <span>+{trend.growthPercentage}%</span>
-                    </div>
-                  </div>
-
-                  <h3 className="text-lg font-bold text-white group-hover:text-[#6366F1] transition-colors">
-                    {trend.title}
-                  </h3>
-
-                  <p className="text-xs text-[#94A3B8] line-clamp-2 leading-relaxed">
-                    {trend.summary}
-                  </p>
-                </div>
-
-                <div className="mt-4 border-t border-[#1F2937] pt-4 space-y-3">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-[#64748B]">Sentiment Score</span>
-                    <span className="font-semibold text-white">{trend.sentimentScore}/100</span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-[#64748B]">Indexed Volume</span>
-                    <span className="font-mono text-white">{formatNumber(trend.volume)}</span>
-                  </div>
-
-                  <div className="flex flex-wrap gap-1 pt-1">
-                    {trend.sources.map((s) => (
-                      <span key={s} className="rounded bg-[#0F172A] px-1.5 py-0.5 text-[10px] text-[#94A3B8] border border-[#1F2937]">
-                        {s}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </Card>
+              <TrendCard key={trend.id} trend={trend} />
             ))}
           </div>
         ) : (
-          <div className="space-y-3">
-            {filteredTrends.map((trend) => (
-              <Card
-                key={trend.id}
-                onClick={() => navigate(`/trends/${trend.id}`)}
-                className="flex items-center justify-between border-[#1F2937] bg-[#111827] p-4 cursor-pointer transition-all hover:border-[#6366F1]"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center space-x-3">
-                    <h3 className="font-bold text-white text-base">{trend.title}</h3>
-                    <Badge variant="secondary" className="bg-[#1E293B] text-xs">
-                      {trend.category}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-[#94A3B8] line-clamp-1">{trend.summary}</p>
-                </div>
-
-                <div className="flex items-center space-x-6 shrink-0">
-                  <div className="text-right">
-                    <div className="text-sm font-bold text-[#34D399]">+{trend.growthPercentage}%</div>
-                    <div className="text-[10px] text-[#64748B]">{formatNumber(trend.volume)} mentions</div>
-                  </div>
-                  <Button variant="ghost" size="sm" className="text-[#6366F1]">
-                    Details
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          </div>
+          <TrendTable trends={filteredTrends} />
         )
       ) : (
         <Card className="border-[#1F2937] bg-[#111827] p-12 text-center">
-          <p className="text-base text-white font-semibold">No trends matched your filter criteria.</p>
-          <p className="text-xs text-[#94A3B8] mt-1">Try clearing your filters or searching for another keyword.</p>
+          <p className="text-base text-white font-semibold">No trends matched your search query or filter criteria.</p>
+          <p className="text-xs text-[#94A3B8] mt-1">Try searching for a different keyword or resetting active filters.</p>
           <Button onClick={clearFilters} className="mt-4 bg-[#6366F1] text-white">
             Reset Filters
           </Button>

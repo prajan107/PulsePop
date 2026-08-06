@@ -10,10 +10,8 @@ import {
   Check, 
   User, 
   Settings as SettingsIcon, 
-  LogOut,
-  ExternalLink
+  LogOut
 } from 'lucide-react';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { 

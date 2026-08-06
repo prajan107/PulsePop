@@ -1,157 +1,123 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Sparkles, Bell, ArrowRight, TrendingUp, Tag, Flame } from 'lucide-react';
-import { MetricCard } from '@/components/dashboard/MetricCard';
-import { TrendGrowthChart } from '@/components/charts/TrendGrowthChart';
-import { SentimentPieChart } from '@/components/charts/SentimentPieChart';
-import { SourceDistChart } from '@/components/charts/SourceDistChart';
-import { CategoryDistChart } from '@/components/charts/CategoryDistChart';
-import { LatestTrendsTable } from '@/components/trend/LatestTrendsTable';
-import { 
-  MOCK_METRICS, 
-  MOCK_ALERTS, 
-  MOCK_TRENDING_KEYWORDS, 
-  MOCK_TOP_CATEGORIES 
-} from '@/mocks/mockData';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import React, { useState } from 'react';
+import { Activity, Clock, Cpu, Layers, TrendingUp } from 'lucide-react';
+import { useAnalyticsOverview, useTopTrends } from '@/features/dashboard/dashboardQueries';
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton';
+import { EmptyDashboard } from '@/components/dashboard/EmptyDashboard';
+import { QuickActions } from '@/components/dashboard/widgets/QuickActions';
+import { RecentTrendsTable } from '@/components/dashboard/widgets/RecentTrendsTable';
+import { StatsCard } from '@/components/dashboard/widgets/StatsCard';
 
 export const DashboardPage: React.FC = () => {
-  const navigate = useNavigate();
+  const [days, setDays] = useState<number | undefined>(undefined);
+
+  const {
+    data: overview,
+    isLoading: isOverviewLoading,
+    isError: isOverviewError,
+    refetch: refetchOverview,
+  } = useAnalyticsOverview(days);
+
+  const {
+    data: topTrends = [],
+    isLoading: isTopTrendsLoading,
+    isError: isTopTrendsError,
+    refetch: refetchTopTrends,
+  } = useTopTrends(10, days);
+
+  const isLoading = isOverviewLoading || isTopTrendsLoading;
+  const isError = isOverviewError || isTopTrendsError;
+
+  const handleRefresh = () => {
+    refetchOverview();
+    refetchTopTrends();
+  };
+
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
+
+  if (isError) {
+    return (
+      <div className="space-y-6">
+        <DashboardHeader days={days} onDaysChange={setDays} />
+        <div className="rounded-xl border border-[#EF4444]/30 bg-[#EF4444]/10 p-6 text-center text-xs text-[#EF4444]">
+          Failed to load dashboard analytics from backend APIs. Please ensure backend server is operational.
+        </div>
+      </div>
+    );
+  }
+
+  const hasData = overview && (overview.total_raw_trends > 0 || overview.total_clusters > 0 || topTrends.length > 0);
 
   return (
-    <div className="space-y-8 pb-10">
-      {/* Header Banner */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
-            Intelligence Overview <Sparkles className="h-6 w-6 text-[#6366F1]" />
-          </h1>
-          <p className="mt-1 text-sm text-[#94A3B8]">
-            Real-time cross-platform signals, AI cluster velocity, and automated trend predictions.
-          </p>
-        </div>
-        <div className="flex items-center space-x-3">
-          <Button 
-            variant="outline" 
-            onClick={() => navigate('/search')}
-            className="border-[#1F2937] hover:bg-[#1F2937]"
-          >
-            Explore All Trends
-          </Button>
-          <Button 
-            onClick={() => navigate('/alerts')}
-            className="bg-[#6366F1] hover:bg-[#4F46E5] text-white flex items-center gap-2"
-          >
-            <Bell className="h-4 w-4" /> Manage Alerts
-          </Button>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <DashboardHeader days={days} onDaysChange={setDays} />
 
-      {/* 4 Metric Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {MOCK_METRICS.map((metric) => (
-          <MetricCard key={metric.id} data={metric} />
-        ))}
-      </div>
+      {!hasData ? (
+        <EmptyDashboard onRefresh={handleRefresh} />
+      ) : (
+        <>
+          {/* Stats Cards Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <StatsCard
+              title="Total Raw Trends"
+              value={overview.total_raw_trends.toLocaleString()}
+              description="Ingested signal volume"
+              icon={Activity}
+              iconColor="text-[#6366F1]"
+              badgeText="Ingested"
+              badgeVariant="neutral"
+            />
+            <StatsCard
+              title="Total Clusters"
+              value={overview.total_clusters.toLocaleString()}
+              description="Grouped trend topics"
+              icon={Layers}
+              iconColor="text-[#818CF8]"
+              badgeText="Active"
+              badgeVariant="neutral"
+            />
+            <StatsCard
+              title="Avg Trend Score"
+              value={overview.average_trend_score.toFixed(1)}
+              description="Platform-wide velocity"
+              icon={TrendingUp}
+              iconColor="text-[#10B981]"
+              badgeText="Score"
+              badgeVariant="success"
+            />
+            <StatsCard
+              title="Avg Sentiment"
+              value={`${(overview.average_sentiment_confidence * 100).toFixed(0)}%`}
+              description="AI Confidence ratio"
+              icon={Cpu}
+              iconColor="text-[#F59E0B]"
+              badgeText="AI Model"
+              badgeVariant="warning"
+            />
+            <StatsCard
+              title="Avg Processing Time"
+              value={`${overview.average_processing_time_ms.toFixed(0)}ms`}
+              description="Pipeline latency"
+              icon={Clock}
+              iconColor="text-[#38BDF8]"
+              badgeText="Fast"
+              badgeVariant="neutral"
+            />
+          </div>
 
-      {/* 4 Charts Grid */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <TrendGrowthChart />
-        <SentimentPieChart />
-        <SourceDistChart />
-        <CategoryDistChart />
-      </div>
-
-      {/* Latest Trends Table Section */}
-      <div className="rounded-xl border border-[#1F2937] bg-[#111827] p-6 shadow-xl">
-        <LatestTrendsTable />
-      </div>
-
-      {/* Bottom Widgets Grid: Recent Alerts, Trending Keywords, Top Categories */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Recent Alerts Widget */}
-        <Card className="border-[#1F2937] bg-[#111827]">
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
+          {/* Main Dashboard Layout Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="lg:col-span-3">
+              <RecentTrendsTable trends={topTrends} />
+            </div>
             <div>
-              <CardTitle className="text-base font-semibold text-white flex items-center gap-2">
-                <Bell className="h-4 w-4 text-[#6366F1]" /> Recent Alerts
-              </CardTitle>
-              <CardDescription className="text-xs text-[#94A3B8]">Latest volume & sentiment triggers</CardDescription>
+              <QuickActions onRefresh={handleRefresh} />
             </div>
-            <Button variant="ghost" size="sm" onClick={() => navigate('/alerts')} className="text-xs text-[#6366F1]">
-              View All
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {MOCK_ALERTS.slice(0, 3).map((alert) => (
-              <div key={alert.id} className="rounded-lg border border-[#1F2937] bg-[#0F172A]/60 p-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-xs text-white">{alert.title}</span>
-                  <Badge variant={alert.status === 'active' ? 'success' : 'secondary'} className="text-[10px]">
-                    {alert.status}
-                  </Badge>
-                </div>
-                <p className="mt-1 text-xs text-[#94A3B8]">Query: "{alert.query}"</p>
-                <div className="mt-2 flex items-center justify-between text-[11px] text-[#64748B]">
-                  <span>Triggered {alert.triggerCount} times</span>
-                  <span>{alert.lastTriggered}</span>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* Trending Keywords Cloud */}
-        <Card className="border-[#1F2937] bg-[#111827]">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold text-white flex items-center gap-2">
-              <Tag className="h-4 w-4 text-[#10B981]" /> High Velocity Keywords
-            </CardTitle>
-            <CardDescription className="text-xs text-[#94A3B8]">Fastest growing search queries</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {MOCK_TRENDING_KEYWORDS.map((kw) => (
-                <button
-                  key={kw.text}
-                  onClick={() => navigate('/search')}
-                  className="group flex items-center space-x-1.5 rounded-lg border border-[#1F2937] bg-[#1E293B] px-3 py-1.5 text-xs text-[#94A3B8] hover:border-[#6366F1] hover:text-white transition-all"
-                >
-                  {kw.isHot && <Flame className="h-3 w-3 text-[#EF4444]" />}
-                  <span>{kw.text}</span>
-                  <span className="text-[10px] font-mono text-[#6366F1] font-bold">+{kw.weight}%</span>
-                </button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Top Categories Widget */}
-        <Card className="border-[#1F2937] bg-[#111827]">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold text-white flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-[#3B82F6]" /> Top Sector Growth
-            </CardTitle>
-            <CardDescription className="text-[#94A3B8] text-xs">Sector level signal breakdown</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {MOCK_TOP_CATEGORIES.map((cat) => (
-              <div key={cat.name} className="flex items-center justify-between p-2.5 rounded-lg bg-[#0F172A]/60 border border-[#1F2937]">
-                <div className="flex items-center space-x-3">
-                  <span className={`h-2.5 w-2.5 rounded-full ${cat.color}`} />
-                  <span className="font-semibold text-xs text-white">{cat.name}</span>
-                </div>
-                <div className="flex items-center space-x-3 text-xs">
-                  <span className="text-[#94A3B8]">{cat.count} signals</span>
-                  <span className="font-bold text-[#34D399]">{cat.growth}</span>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

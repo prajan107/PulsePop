@@ -5,13 +5,11 @@ import {
   Pause, 
   Play, 
   Trash2, 
-  CheckCircle2, 
   Sparkles, 
-  Activity,
   History
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MOCK_ALERTS, MOCK_NOTIFICATIONS } from '@/mocks/mockData';
 import { Alert } from '@/types';

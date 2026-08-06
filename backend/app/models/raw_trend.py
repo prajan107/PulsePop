@@ -1,10 +1,13 @@
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import JSON, DateTime, Float, String, Text, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
+
+if TYPE_CHECKING:
+    from app.models.trend_analysis import TrendAnalysis
 
 
 class RawTrend(Base):
@@ -43,6 +46,10 @@ class RawTrend(Base):
         server_default=func.now(),
         onupdate=func.now(),
         nullable=False,
+    )
+
+    analyses: Mapped[list["TrendAnalysis"]] = relationship(
+        "TrendAnalysis", back_populates="raw_trend", cascade="all, delete-orphan"
     )
 
 

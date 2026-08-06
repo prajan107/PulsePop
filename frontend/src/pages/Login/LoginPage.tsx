@@ -1,146 +1,129 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Sparkles, ArrowRight, Github, Lock, Mail, ShieldCheck } from 'lucide-react';
+import { ArrowRight, Lock, Mail } from 'lucide-react';
+import { useAuthStore } from '@/features/auth/store/authStore';
+import { toast } from '@/components/common/Toast';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Logo } from '@/components/ui/logo';
 
 const loginSchema = z.object({
-  email: z.string().email({ message: 'Please enter a valid email address' }),
-  password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
+  email: z.string().min(1, 'Email is required').email('Invalid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuthStore();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
     register,
     handleSubmit,
     setValue,
-    formState: { errors },
+    formState: { errors, isValid },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
+    mode: 'onChange',
     defaultValues: {
-      email: 'alex.vance@pulsepop.ai',
-      password: 'password123',
+      email: '',
+      password: '',
     },
   });
 
-  const onSubmit = (data: LoginFormValues) => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      navigate('/');
-    }, 600);
+  const onSubmit = async (data: LoginFormValues) => {
+    setIsSubmitting(true);
+    try {
+      await login(data);
+      toast.success('Successfully signed in!', 'Welcome back');
+      navigate('/profile');
+    } catch (err: unknown) {
+      const errorMessage =
+        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
+        'Failed to log in. Please check your credentials.';
+      toast.error(errorMessage, 'Authentication Error');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleDemoFill = () => {
-    setValue('email', 'alex.vance@pulsepop.ai');
-    setValue('password', 'password123');
+  const fillDemo = () => {
+    setValue('email', 'admin@pulsepop.ai', { shouldValidate: true });
+    setValue('password', 'AdminSecret123!', { shouldValidate: true });
   };
 
   return (
-    <div className="relative flex min-h-screen w-screen items-center justify-center bg-[#0F172A] p-4 selection:bg-[#6366F1]/30">
-      {/* Dynamic Ambient Background Glow */}
-      <div className="absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 h-96 w-96 rounded-full bg-[#6366F1]/10 blur-[120px] pointer-events-none" />
+    <div className="relative flex min-h-[calc(100vh-8rem)] w-full items-center justify-center p-4">
+      {/* Background glow */}
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-96 w-96 rounded-full bg-[#6366F1]/10 blur-[120px] pointer-events-none" />
 
       <div className="w-full max-w-md space-y-6 z-10">
-        {/* Brand Header */}
         <div className="text-center space-y-2">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#6366F1] to-[#818CF8] shadow-xl shadow-[#6366F1]/30">
-            <Sparkles className="h-6 w-6 text-white animate-pulse" />
-          </div>
-          <h1 className="text-2xl font-extrabold text-white tracking-tight">PulsePop AI</h1>
-          <p className="text-xs text-[#94A3B8]">Sign in to access real-time AI trend signals</p>
+          <Logo size="lg" className="justify-center mb-2" />
+          <h1 className="text-2xl font-extrabold text-white tracking-tight">Sign In to PulsePop</h1>
+          <p className="text-xs text-[#94A3B8]">Real-time AI Trend Signals & Analytics Platform</p>
         </div>
 
-        {/* Login Form Card */}
         <Card className="border-[#1F2937] bg-[#111827]/90 shadow-2xl backdrop-blur-xl">
           <CardHeader className="pb-4">
             <CardTitle className="text-base font-semibold text-white">Welcome back</CardTitle>
-            <CardDescription className="text-xs text-[#94A3B8]">Enter your credentials to manage workspace signals</CardDescription>
+            <CardDescription className="text-xs text-[#94A3B8]">
+              Enter your email and password to access your account
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div>
-                <label className="text-xs font-semibold text-[#94A3B8] mb-1.5 block">Email address</label>
+              <FormField label="Email Address" error={errors.email?.message} required>
                 <Input
                   {...register('email')}
                   type="email"
-                  placeholder="name@company.com"
-                  icon={<Mail className="h-4 w-4 text-[#94A3B8]" />}
+                  placeholder="name@example.com"
+                  icon={<Mail className="h-4 w-4" />}
                 />
-                {errors.email && (
-                  <p className="text-[11px] text-[#EF4444] mt-1">{errors.email.message}</p>
-                )}
-              </div>
+              </FormField>
 
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-semibold text-[#94A3B8]">Password</label>
-                  <a href="#" onClick={(e) => e.preventDefault()} className="text-[11px] text-[#6366F1] hover:underline">
-                    Forgot password?
-                  </a>
-                </div>
+              <FormField label="Password" error={errors.password?.message} required>
                 <Input
                   {...register('password')}
                   type="password"
+                  showPasswordToggle
                   placeholder="••••••••"
-                  icon={<Lock className="h-4 w-4 text-[#94A3B8]" />}
+                  icon={<Lock className="h-4 w-4" />}
                 />
-                {errors.password && (
-                  <p className="text-[11px] text-[#EF4444] mt-1">{errors.password.message}</p>
-                )}
-              </div>
+              </FormField>
 
               <Button
                 type="submit"
-                isLoading={isLoading}
-                className="w-full bg-[#6366F1] hover:bg-[#4F46E5] text-white font-semibold h-10 shadow-lg shadow-[#6366F1]/20"
+                isLoading={isSubmitting}
+                disabled={!isValid || isSubmitting}
+                className="w-full bg-[#6366F1] hover:bg-[#4F46E5] text-white font-semibold h-10 shadow-lg shadow-[#6366F1]/20 mt-2"
               >
-                Sign In to Dashboard <ArrowRight className="ml-2 h-4 w-4" />
+                Sign In <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </form>
 
-            <div className="relative my-4">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-[#1F2937]" />
-              </div>
-              <div className="relative flex justify-center text-[10px] uppercase">
-                <span className="bg-[#111827] px-2 text-[#64748B] font-semibold">Or continue with</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                variant="outline"
+            <div className="pt-2 text-center">
+              <button
                 type="button"
-                onClick={() => navigate('/')}
-                className="border-[#1F2937] text-xs text-[#CBD5E1] hover:bg-[#1F2937]"
+                onClick={fillDemo}
+                className="text-[11px] font-medium text-[#818CF8] hover:underline"
               >
-                <Github className="mr-2 h-4 w-4" /> GitHub
-              </Button>
-              <Button
-                variant="outline"
-                type="button"
-                onClick={handleDemoFill}
-                className="border-[#6366F1]/30 bg-[#6366F1]/10 text-xs text-[#818CF8] hover:bg-[#6366F1]/20"
-              >
-                <ShieldCheck className="mr-2 h-4 w-4 text-[#6366F1]" /> Auto-Fill Demo
-              </Button>
+                Auto-fill Demo Credentials
+              </button>
             </div>
           </CardContent>
           <CardFooter className="justify-center border-t border-[#1F2937] pt-4 text-xs text-[#94A3B8]">
             Don't have an account?{' '}
-            <button onClick={() => navigate('/')} className="ml-1 text-[#6366F1] font-semibold hover:underline">
-              Request Free Trial
-            </button>
+            <Link to="/register" className="ml-1 text-[#6366F1] font-semibold hover:underline">
+              Create an account
+            </Link>
           </CardFooter>
         </Card>
       </div>

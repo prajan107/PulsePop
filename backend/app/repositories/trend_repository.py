@@ -41,6 +41,51 @@ class TrendRepository:
         await self.session.refresh(trend)
         return trend
 
+    async def get_by_title(self, title: str) -> Trend | None:
+        """Retrieve a Trend entity by exact title."""
+        result = await self.session.execute(
+            select(Trend).where(Trend.title == title)
+        )
+        return result.scalar_one_or_none()
+
+    async def upsert_from_cluster(
+        self,
+        title: str,
+        summary: str | None,
+        category_id: int | None,
+        source_id: int | None,
+        sentiment_score: float,
+        trend_score: float,
+        popularity_score: float,
+    ) -> Trend:
+        """Idempotently create or update a Trend entity from cluster projection."""
+        existing = await self.get_by_title(title)
+        if existing:
+            existing.summary = summary or existing.summary
+            if category_id is not None:
+                existing.category_id = category_id
+            if source_id is not None:
+                existing.source_id = source_id
+            existing.sentiment_score = sentiment_score
+            existing.trend_score = trend_score
+            existing.popularity_score = popularity_score
+            existing.last_detected_at = func.now()
+            self.session.add(existing)
+            await self.session.commit()
+            await self.session.refresh(existing)
+            return existing
+
+        trend_create = TrendCreate(
+            title=title,
+            summary=summary,
+            category_id=category_id,
+            source_id=source_id,
+            sentiment_score=sentiment_score,
+            trend_score=trend_score,
+            popularity_score=popularity_score,
+        )
+        return await self.create(trend_create)
+
     async def get_by_id(self, trend_id: int) -> Trend | None:
         """Retrieve a Trend entity by primary key ID."""
         result = await self.session.execute(

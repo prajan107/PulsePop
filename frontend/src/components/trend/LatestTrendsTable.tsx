@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TrendingUp, ArrowUpRight, ChevronRight, Sparkles } from 'lucide-react';
+import { ArrowUpRight, ChevronRight, Sparkles } from 'lucide-react';
 import { 
   Table, 
   TableHeader, 

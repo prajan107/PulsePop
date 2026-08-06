@@ -24,7 +24,87 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 238.7 83.5% 66.7%;
     --radius: 0.75rem;
+
+    --bg-main: #0F172A;
+    --text-main: #F8FAFC;
+    --card-bg: rgba(17, 24, 39, 0.8);
+    --border-color: #1F2937;
   }
+
+  html.light {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --bg-main: #F8FAFC;
+    --text-main: #0F172A;
+    --card-bg: #FFFFFF;
+    --border-color: #E2E8F0;
+  }
+
+  html.dark {
+    --bg-main: #0F172A;
+    --text-main: #F8FAFC;
+    --card-bg: rgba(17, 24, 39, 0.8);
+    --border-color: #1F2937;
+  }
+
+  body {
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+}
+
+/* Light mode component style overrides */
+html.light .bg-\[\#0F172A\] {
+  background-color: #F8FAFC !important;
+}
+
+html.light .bg-\[\#111827\] {
+  background-color: #FFFFFF !important;
+}
+
+html.light .bg-\[\#0F172A\]\/80,
+html.light .bg-\[\#0F172A\]\/70,
+html.light .bg-\[\#0F172A\]\/50,
+html.light .bg-\[\#0F172A\]\/60 {
+  background-color: rgba(255, 255, 255, 0.85) !important;
+}
+
+html.light .bg-\[\#111827\]\/80,
+html.light .bg-\[\#111827\]\/70,
+html.light .bg-\[\#111827\]\/50 {
+  background-color: #FFFFFF !important;
+}
+
+html.light .border-\[\#1F2937\] {
+  border-color: #E2E8F0 !important;
+}
+
+html.light .text-white {
+  color: #0F172A !important;
+}
+
+html.light .text-\[\#F8FAFC\] {
+  color: #0F172A !important;
+}
+
+html.light .text-\[\#94A3B8\] {
+  color: #475569 !important;
+}
+
+html.light .text-\[\#CBD5E1\] {
+  color: #334155 !important;
+}
+
+html.light .text-\[\#64748B\] {
+  color: #475569 !important;
 }
 
 /* Custom scrollbars */
@@ -34,28 +114,28 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #0F172A;
+  background: var(--bg-main);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1F2937;
+  background: var(--border-color);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #374151;
+  background: #6366F1;
 }
 
 /* Glassmorphism helpers */
 .glass-panel {
-  background: rgba(17, 24, 39, 0.75);
+  background: var(--card-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(31, 41, 55, 0.8);
+  border: 1px solid var(--border-color);
 }
 
 .glass-header {
-  background: rgba(15, 23, 42, 0.8);
+  background: var(--bg-main);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }

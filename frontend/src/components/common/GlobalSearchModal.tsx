@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, TrendingUp, ArrowRight, Sparkles, X } from 'lucide-react';
+import { Search, ArrowRight, Sparkles, X } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { MOCK_TRENDS, MOCK_TRENDING_KEYWORDS } from '@/mocks/mockData';
 import { Badge } from '@/components/ui/badge';
 

@@ -1,7 +1,6 @@
 import React from 'react';
 import { 
   TrendingUp, 
-  TrendingDown, 
   Zap, 
   Smile, 
   Layers, 

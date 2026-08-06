@@ -4,12 +4,10 @@ import {
   Paintbrush, 
   Bell, 
   Key, 
-  ShieldCheck, 
   Save, 
   Copy, 
   Check, 
   Plus, 
-  Trash2,
   Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
